@@ -45,7 +45,7 @@
     "watch": "npm run compile -- --watch"
   },
   "devDependencies": {
-    "@commonkads/knowledge-examples": "latest",
+    "@commonkads/knowledge-examples": "1.0.0",
     "@eslint/js": "^9.39.5",
     "@robproper/feature-workflow": "latest",
     "@types/debug": "^4.1.12",
