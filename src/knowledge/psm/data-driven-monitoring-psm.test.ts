@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { RuntimeContext } from '../../core/context.js';
 import { RuntimeEngine } from '../../core/engine.js';
 import { FileStoreKnowledgeAdapter } from '../../provider/file-store-knowledge-adapter.js';
-import type { FileContent, IFileStore } from '@robproper/strata-engine';
+import type { FileContent, IFileStore } from '@commonkads/engine';
 import { DataDrivenMonitoringPsm } from './data-driven-monitoring-psm.js';
 
 class FakeFileStore implements IFileStore {

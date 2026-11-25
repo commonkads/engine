@@ -160,3 +160,8 @@ vite.config.ts.timestamp-*
 published/
 junit.xml
 test-results.xml
+
+docs/coding-standards.md
+docs/developer-guidance-backend.md
+docs/developer-guidance-frontend.md
+docs/feature-workflow.md

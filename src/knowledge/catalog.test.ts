@@ -6,8 +6,8 @@ import {
   loadDomainManifestFromStore,
   KnowledgeCatalogError,
   DomainManifestError,
-} from '@robproper/strata-engine';
-import type { FileContent, IFileStore } from '@robproper/strata-engine';
+} from './catalog.js';
+import type { FileContent, IFileStore } from '../core/index.js';
 
 class FakeFileStore implements IFileStore {
   constructor(private readonly files: Record<string, string>) {}

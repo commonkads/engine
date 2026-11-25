@@ -1,6 +1,6 @@
 import { parse as parseYaml } from 'yaml';
 
-import type { TaskState } from '@robproper/strata-engine';
+import type { TaskState } from '../../../../core/index.js';
 import { AssessmentWithAbstractionPsm } from '../../../index.js';
 import type { VitalSignsInput, VitalSignsNorm } from './types.js';
 

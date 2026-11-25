@@ -1,12 +1,13 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
 
 import { RuntimeContext, type RuntimeContextOptions } from '../../../../core/context.js';
 import { RuntimeEngine } from '../../../../core/engine.js';
 import { FileStoreKnowledgeAdapter } from '../../../../provider/file-store-knowledge-adapter.js';
-import type { IInferenceProvider } from '@robproper/strata-engine';
-import type { InferenceOptions } from '@robproper/strata-engine';
+import type { IInferenceProvider } from '../../../../core/index.js';
+import type { InferenceOptions } from '../../../../core/index.js';
 import { createVitalSignsAssessment } from './wiring.js';
 import type { VitalSignsInput } from './types.js';
 import type { AssessmentResult } from '../../assessment-with-abstraction-psm.js';
@@ -108,8 +109,10 @@ async function assess(
   input: VitalSignsInput,
   contextOptions: RuntimeContextOptions = {},
 ): Promise<{ result: AssessmentResult; context: RuntimeContext }> {
-  const knowledgeRoot = fileURLToPath(
-    new URL('../../../../../../examples/vital-signs', import.meta.url),
+  const require = createRequire(import.meta.url);
+  const knowledgeRoot = join(
+    dirname(require.resolve('@commonkads/knowledge-examples/package.json')),
+    'knowledge/vital-signs',
   );
   const { psm, fileStore } = createVitalSignsAssessment(knowledgeRoot);
   const engine = new RuntimeEngine(

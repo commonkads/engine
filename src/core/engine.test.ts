@@ -12,7 +12,7 @@ import type {
   IPsmTemplate,
   StepDefinition,
   TaskState,
-} from '@robproper/strata-engine';
+} from '@commonkads/engine';
 
 class FakeKnowledgeStore implements IKnowledgeStore {
   constructor(
