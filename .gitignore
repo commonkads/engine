@@ -161,6 +161,7 @@ published/
 junit.xml
 test-results.xml
 
+docs/ci-guidance.md
 docs/coding-standards.md
 docs/developer-guidance-backend.md
 docs/developer-guidance-frontend.md
