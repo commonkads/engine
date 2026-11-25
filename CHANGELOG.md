@@ -4,9 +4,16 @@ All notable changes to this project are documented in this file.
 
 ## Versions
 
+- [3.1.1 — 2026-11-25](#311--2026-11-25)
 - [3.0.0](#300--2026-11-17)
 - [1.1.0](#110--2026-11-17)
 - [1.0.0](#100)
+
+## [3.1.1] — 2026-11-25
+
+- Added living system docs at `docs/specs/requirements.md` and `docs/specs/design.md`; removed stale `specs/` directory carried over from the strata-engine era
+
+[Full change log →](docs/specs/features/cleanup-legacy-specs/07-changes.md)
 
 ## 3.0.0 — 2026-11-17
 
@@ -23,7 +30,7 @@ All notable changes to this project are documented in this file.
 
 ## 1.0.0
 
-[Initial engine](specs/initial-engine/requirements.md) changes:
+Initial engine changes:
 
 - **Core runtime** - `RuntimeEngine`, running the Task Execution Loop against
   pluggable `IFileStore`, `IKnowledgeStore`, and `ITextInference` providers.
@@ -77,5 +84,4 @@ All notable changes to this project are documented in this file.
   full vital-signs scenario matrix), all without network calls; a separate
   live-Bedrock integration suite that self-skips without credentials.
 - **Docs** - `README.md` (purpose and architecture), `docs/developer-guide.md`
-  (setup, build, test, and CLI usage), and `specs/initial-engine/`
-  (requirements, design, and task breakdown).
+  (setup, build, test, and CLI usage).

@@ -55,7 +55,6 @@ layers. The engine is driven by inference and task knowledge layers.
 
 ## More information
 
-- `specs/initial-engine/` — the original requirements and design documents
-  this engine was built from.
+- `docs/specs/requirements.md` / `docs/specs/design.md` — living system requirements and design.
 - `docs/developer-guide.md` — setup, build, test, and CLI usage for working
   on this repo.
