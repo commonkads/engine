@@ -9,6 +9,12 @@ All notable changes to this project are documented in this file.
 - [1.1.0](#110--2026-11-17)
 - [1.0.0](#100)
 
+## 0.2.0
+
+### Minor Changes
+
+- a1e80e6: Move `OllamaTextInference` to the new `@commonkads/provider-ollama` package. Install that package and call `registerOllamaProviders()` at startup to continue using Ollama.
+
 ## 3.1.0 — 2026-11-25
 
 - `OllamaTextInference` and `OllamaProviderOptions` moved to the new `@commonkads/provider-ollama` package — install and call `registerOllamaProviders()` at startup to continue using Ollama
