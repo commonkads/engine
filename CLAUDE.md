@@ -8,7 +8,7 @@ A runtime for executing knowledge-intensive tasks by combining reusable CommonKA
 problem-solving method (PSM) templates with domain knowledge that lives entirely outside the
 code (in `knowledge/`), retrieved at runtime and handed to an LLM (or evaluated
 deterministically) to produce an auditable result. Full rationale: `README.md`. Original
-requirements/design/task breakdown (kept in sync with the implementation): `specs/initial-engine/`.
+Living requirements and design: `docs/specs/requirements.md` and `docs/specs/design.md`.
 
 
 ## Architecture
