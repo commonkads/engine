@@ -1,6 +1,6 @@
 {
   "name": "@commonkads/engine",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Core PSM runtime — PSM templates, engine loop, and provider interfaces",
   "type": "module",
   "author": "Rob Proper",
