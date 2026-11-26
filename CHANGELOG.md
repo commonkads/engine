@@ -5,6 +5,7 @@ All notable changes to this project are documented in this file.
 ## Versions
 
 - [3.1.1 — 2026-11-25](#311--2026-11-25)
+- [3.1.0 — 2026-11-25](#310--2026-11-25)
 - [3.0.0](#300--2026-11-17)
 - [1.1.0](#110--2026-11-17)
 - [1.0.0](#100)
@@ -14,6 +15,12 @@ All notable changes to this project are documented in this file.
 - Added living system docs at `docs/specs/requirements.md` and `docs/specs/design.md`; removed stale `specs/` directory carried over from the strata-engine era
 
 [Full change log →](docs/specs/features/cleanup-legacy-specs/07-changes.md)
+
+## 3.1.0 — 2026-11-25
+
+- `OllamaTextInference` and `OllamaProviderOptions` moved to the new `@commonkads/provider-ollama` package — install and call `registerOllamaProviders()` at startup to continue using Ollama
+
+[Full change log →](docs/specs/features/extract-ollama-provider/07-changes.md)
 
 ## 3.0.0 — 2026-11-17
 

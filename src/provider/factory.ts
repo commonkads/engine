@@ -1,27 +1,11 @@
 import type { IInferenceProvider } from '../core/interfaces/i-inference-provider.js';
 
-import { OllamaTextInference } from './ollama/ollama.js';
-
-export interface OllamaProviderOptions {
-  type: 'ollama';
-  model: string;
-  baseUrl?: string;
-}
-
 /** An open-ended config shape passed to registered provider builders. */
 export type ProviderConfig = { type: string } & Record<string, unknown>;
 
 type ProviderBuilder = (options: ProviderConfig) => IInferenceProvider;
 
-const registry = new Map<string, ProviderBuilder>([
-  [
-    'ollama',
-    (opts) => {
-      const o = opts as unknown as OllamaProviderOptions;
-      return new OllamaTextInference(o.model, { baseUrl: o.baseUrl });
-    },
-  ],
-]);
+const registry = new Map<string, ProviderBuilder>();
 
 /**
  * Registers a custom provider builder. Call once at startup before any

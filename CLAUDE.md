@@ -53,8 +53,7 @@ output-processing genuinely needs an LLM, that decision belongs in the step itse
 ### Providers and domains
 
 `IFileStore`, `IKnowledgeStore`, and `IInferenceProvider` (defined in `src/core/interfaces/`) are
-the only seams between the engine and the outside world. `OllamaTextInference` lives under
-`src/provider/ollama/`; `LocalFileStore` lives under `src/provider/local/`. Cloud provider
+the only seams between the engine and the outside world. `LocalFileStore` lives under `src/provider/local/`. Ollama is provided by the separate `@commonkads/provider-ollama` package. Cloud provider
 implementations live in separate packages. Any provider can be swapped without touching engine or PSM code.
 
 `registerProvider(type, builder)` in `src/provider/factory.ts` lets callers add or override
