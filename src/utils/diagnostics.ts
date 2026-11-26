@@ -35,7 +35,10 @@ function resolveProviderName(): LogProviderName {
 
 function getPinoRoot(): PinoLogger {
   if (!sharedPinoRoot) {
-    sharedPinoRoot = pino({ level: process.env[LOG_LEVEL_ENV_VAR] ?? DEFAULT_LOG_LEVEL });
+    sharedPinoRoot = pino(
+      { level: process.env[LOG_LEVEL_ENV_VAR] ?? DEFAULT_LOG_LEVEL },
+      process.stderr,
+    );
   }
   return sharedPinoRoot;
 }
