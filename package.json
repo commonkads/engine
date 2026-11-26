@@ -43,10 +43,9 @@
     "version:pr": "echo \"$(npm run version:current -s)-alpha-$(date +'%Y%m%d%H%M%S')\"",
     "version:current": "node -p \"require('./package.json').version\"",
     "watch": "npm run compile -- --watch",
-    "release": "changeset publish"
+    "release": "npm publish"
   },
   "devDependencies": {
-    "@changesets/cli": "^3.0.3",
     "@commonkads/knowledge-examples": "1.0.0",
     "@eslint/js": "^9.39.5",
     "@commonkads/dev-workflow": "1.1.0",
