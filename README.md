@@ -1,5 +1,7 @@
 # @commonkads/engine
 
+> **Disclaimer:** This project is an independent open-source software implementation inspired by the CommonKADS knowledge engineering methodology (Schreiber et al.). It is not affiliated with or endorsed by the original methodology authors or any third-party trademark holders.
+
 A runtime for executing knowledge-intensive tasks by combining reusable CommonKADS
 problem-solving method (PSM) templates with domain knowledge that lives entirely outside the
 code, retrieved at runtime and handed to an LLM (or evaluated deterministically) to produce
