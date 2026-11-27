@@ -35,7 +35,7 @@ layers. The engine is driven by inference and task knowledge layers.
 
 - **A Task Execution Loop (`RuntimeEngine`)** that drives any PSM template:
   it asks the PSM for the next step, fetches the knowledge that step needs
-  (from a file store and/or a vector knowledge store), either hands that
+  (via `ICatalog.getModel()`), either hands that
   knowledge straight to the PSM (deterministic steps) or sends it to an LLM
   (inference steps), and folds the result back into task state until the
   PSM reports there's nothing left to do.
@@ -45,8 +45,8 @@ layers. The engine is driven by inference and task knowledge layers.
   onboarded by pointing a template at a new set of knowledge files, not by
   writing new orchestration code.
 - **Swappable storage and inference providers** behind small interfaces
-  (`IFileStore`, `IKnowledgeStore`, `IInferenceProvider`) — local filesystem or
-  cloud storage for knowledge files, and any LLM for the inference calls.
+  (`ICatalog`, `IStorageBackend`, `InferenceProvider`) — a catalog resolves knowledge
+  models from local filesystem or cloud storage, and any LLM handles the inference calls.
 - **An explain mode, an audit log, and step timings** on every run, so a
   result can always be traced back to the exact knowledge document versions
   and reasoning that produced it.

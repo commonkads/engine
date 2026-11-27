@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 
 import { RuntimeContext } from '../../core/context.js';
 import { RuntimeEngine } from '../../core/engine.js';
-import { FileStoreKnowledgeAdapter } from '../../provider/file-store-knowledge-adapter.js';
-import type { FileContent, IFileStore } from '@commonkads/engine';
+import type { FileContent } from '@commonkads/engine';
+import type { ICatalog } from '../../catalog/i-catalog.js';
+import type { IStorageBackend } from '../../catalog/i-storage-backend.js';
 import { CausalCoveringPsm } from './causal-covering-psm.js';
 
-class FakeFileStore implements IFileStore {
+class FakeFileStore implements IStorageBackend {
   async read(path: string): Promise<string> {
     return (await this.readWithVersion(path)).content;
   }
@@ -21,10 +22,14 @@ class FakeFileStore implements IFileStore {
   }
 }
 
+const catalog: ICatalog = {
+  getTask: () => Promise.reject(new Error('getTask not used in PSM tests')),
+  getModel: (id) => new FakeFileStore().readWithVersion(id),
+};
+
 function buildEngine(hypotheses: Array<{ name: string; status: string; reason: string }>) {
-  const fileStore = new FakeFileStore();
   const inference = { infer: async () => JSON.stringify(hypotheses) };
-  return new RuntimeEngine(new FileStoreKnowledgeAdapter(fileStore), inference);
+  return new RuntimeEngine(inference);
 }
 
 const paths = {
@@ -44,7 +49,7 @@ describe('CausalCoveringPsm', () => {
     const result = (await engine.execute(
       { name: 'diagnosis', psm: new CausalCoveringPsm(paths) },
       {},
-      new RuntimeContext(),
+      new RuntimeContext({ catalog }),
     )) as {
       verdict: string;
       confirmed: string[];
@@ -59,15 +64,14 @@ describe('CausalCoveringPsm', () => {
   });
 
   it('throws TaskExecutionError when LLM returns an object instead of an array', async () => {
-    const fileStore = new FakeFileStore();
     const inference = { infer: async () => JSON.stringify({ name: 'H1', status: 'Confirmed' }) };
-    const engine = new RuntimeEngine(new FileStoreKnowledgeAdapter(fileStore), inference);
+    const engine = new RuntimeEngine(inference);
 
     await assert.rejects(
       engine.execute(
         { name: 'diagnosis', psm: new CausalCoveringPsm(paths) },
         {},
-        new RuntimeContext(),
+        new RuntimeContext({ catalog }),
       ),
       /Expected a JSON array/,
     );
@@ -82,7 +86,7 @@ describe('CausalCoveringPsm', () => {
     const result = (await engine.execute(
       { name: 'diagnosis', psm: new CausalCoveringPsm(paths) },
       {},
-      new RuntimeContext(),
+      new RuntimeContext({ catalog }),
     )) as {
       verdict: string;
       confirmed: string[];

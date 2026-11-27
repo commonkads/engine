@@ -1,6 +1,6 @@
-import type { InferenceOptions } from '../types/inference-options.js';
+import type { InferenceOptions } from './inference-options.js';
 
 /** Abstract access to an LLM completion capability. */
-export interface IInferenceProvider {
+export interface InferenceProvider {
   infer(prompt: string, options?: InferenceOptions): Promise<string>;
 }

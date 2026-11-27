@@ -1,5 +1,5 @@
-import type { IPsmTemplate } from '../../core/interfaces/i-psm-template.js';
-import type { StepDefinition, TaskState } from '../../core/types/index.js';
+import type { PsmTemplate } from '../../core/psm-template.js';
+import type { StepDefinition, TaskState } from '../../core/index.js';
 
 const COMPLETED_STEPS_KEY = '_completedSteps';
 
@@ -10,7 +10,7 @@ const COMPLETED_STEPS_KEY = '_completedSteps';
  * to describe each step's knowledge requirements and how to fold its
  * output back into state.
  */
-export abstract class BasePsm implements IPsmTemplate {
+export abstract class BasePsm implements PsmTemplate {
   protected abstract readonly stepNames: readonly string[];
 
   abstract initializeState(input: unknown): TaskState;

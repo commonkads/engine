@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { loadDomainManifest, DomainManifestError } from './manifest.js';
+import { loadDomainManifest, DomainManifestError } from './domain-manifest.js';
 
 function makeTmpDir(): string {
   return mkdtempSync(join(tmpdir(), 'strata-manifest-test-'));

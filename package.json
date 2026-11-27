@@ -1,6 +1,6 @@
 {
   "name": "@commonkads/engine",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Core PSM runtime — PSM templates, engine loop, and provider interfaces",
   "type": "module",
   "author": "Rob Proper",
@@ -46,9 +46,9 @@
     "release": "npm publish"
   },
   "devDependencies": {
+    "@commonkads/dev-workflow": "^1.3.0",
     "@commonkads/knowledge-examples": "1.0.0",
     "@eslint/js": "^9.39.5",
-    "@commonkads/dev-workflow": "1.1.0",
     "@types/debug": "^4.1.12",
     "@types/node": "^26.0.1",
     "@typescript-eslint/eslint-plugin": "^8.0.0",

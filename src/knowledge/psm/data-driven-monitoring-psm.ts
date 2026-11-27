@@ -1,5 +1,5 @@
 import { buildExplainInstruction, parseJsonArray } from '../../utils/index.js';
-import type { StepDefinition, TaskState } from '../../core/types/index.js';
+import type { StepDefinition, TaskState } from '../../core/index.js';
 import { BasePsm } from './base-psm.js';
 
 export interface DataDrivenMonitoringPsmPaths {

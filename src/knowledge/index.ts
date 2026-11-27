@@ -1,3 +1,2 @@
-export * from './manifest.js';
-export * from './catalog.js';
 export * from './psm/index.js';
+export * from './psm-factory.js';
