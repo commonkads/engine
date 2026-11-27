@@ -1,4 +1,4 @@
-/** Options passed to `IInferenceProvider.infer`. */
+/** Options passed to `InferenceProvider.infer`. */
 export interface InferenceOptions {
   systemPrompt?: string;
   explain?: boolean;

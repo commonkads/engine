@@ -5,8 +5,8 @@ import { dirname, join } from 'node:path';
 
 import { RuntimeContext, type RuntimeContextOptions } from '../../../../core/context.js';
 import { RuntimeEngine } from '../../../../core/engine.js';
-import { FileStoreKnowledgeAdapter } from '../../../../provider/file-store-knowledge-adapter.js';
-import type { IInferenceProvider } from '../../../../core/index.js';
+import type { ICatalog } from '../../../../catalog/i-catalog.js';
+import type { InferenceProvider } from '../../../../core/index.js';
 import type { InferenceOptions } from '../../../../core/index.js';
 import { createVitalSignsAssessment } from './wiring.js';
 import type { VitalSignsInput } from './types.js';
@@ -83,7 +83,7 @@ function evaluateNorm(
 }
 
 /** Stands in for the LLM: deterministically evaluates whichever norms the PSM actually selected. */
-function createFakeVitalsInference(input: VitalSignsInput): IInferenceProvider {
+function createFakeVitalsInference(input: VitalSignsInput): InferenceProvider {
   const derived: Record<string, unknown> =
     input.Temperature === null || input.Temperature === undefined
       ? {}
@@ -115,11 +115,12 @@ async function assess(
     'knowledge/vital-signs',
   );
   const { psm, fileStore } = createVitalSignsAssessment(knowledgeRoot);
-  const engine = new RuntimeEngine(
-    new FileStoreKnowledgeAdapter(fileStore),
-    createFakeVitalsInference(input),
-  );
-  const context = new RuntimeContext(contextOptions);
+  const engine = new RuntimeEngine(createFakeVitalsInference(input));
+  const catalog: ICatalog = {
+    getTask: () => Promise.reject(new Error('getTask not used in PSM tests')),
+    getModel: (id) => fileStore.readWithVersion(id),
+  };
+  const context = new RuntimeContext({ ...contextOptions, catalog });
   const result = (await engine.execute(
     { name: 'assessment', psm },
     input,

@@ -3,14 +3,14 @@ import { readFile, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { join, relative, resolve, sep } from 'node:path';
 
-import { FileNotFoundError, InvalidStoreConfigError } from '../../core/errors.js';
-import type { FileContent } from '../../core/types/file-content.js';
-import type { IFileStore } from '../../core/interfaces/i-file-store.js';
+import { FileNotFoundError, InvalidStoreConfigError } from '../core/errors.js';
+import type { FileContent } from '../core/file-content.js';
+import type { IStorageBackend } from './i-storage-backend.js';
 
 const VERSION_HASH_LENGTH = 12;
 
-/** `IFileStore` backed by the local filesystem. */
-export class LocalFileStore implements IFileStore {
+/** `IStorageBackend` backed by the local filesystem. */
+export class LocalFileStore implements IStorageBackend {
   constructor(private readonly rootDir: string) {
     let isDirectory;
     try {

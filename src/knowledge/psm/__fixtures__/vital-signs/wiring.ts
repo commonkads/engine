@@ -1,4 +1,4 @@
-import { LocalFileStore } from '../../../../provider/local/local-file-store.js';
+import { LocalFileStore } from '../../../../catalog/local-file-store.js';
 import { VitalSignsAssessmentPsm } from './vital-signs-assessment-psm.js';
 
 export interface VitalSignsAssessmentSetup {

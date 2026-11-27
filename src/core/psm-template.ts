@@ -1,12 +1,12 @@
-import type { StepDefinition } from '../types/step-definition.js';
-import type { TaskState } from '../types/task-state.js';
+import type { StepDefinition } from './step-definition.js';
+import type { TaskState } from './task-state.js';
 
 /**
  * A problem-solving method template. Drives the engine's Task Execution Loop
  * by mapping input to state, yielding steps one at a time, folding step output
  * back into state, and mapping final state to output.
  */
-export interface IPsmTemplate {
+export interface PsmTemplate {
   initializeState(input: unknown): TaskState;
   /** Returns the next step to execute, or `null` when the task is complete. */
   getNextStep(state: TaskState): StepDefinition | null;

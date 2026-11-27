@@ -2,9 +2,11 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { FileStoreKnowledgeAdapter } from './file-store-knowledge-adapter.js';
-import type { FileContent, IFileStore } from '../core/index.js';
+import type { FileContent } from '../core/index.js';
 
-class FakeFileStore implements IFileStore {
+import type { IStorageBackend } from './i-storage-backend.js';
+
+class FakeFileStore implements IStorageBackend {
   constructor(private readonly files: Record<string, FileContent> = {}) {}
 
   async read(path: string): Promise<string> {

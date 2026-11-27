@@ -4,35 +4,32 @@ import assert from 'node:assert/strict';
 import { RuntimeContext } from './context.js';
 import { RuntimeEngine } from './engine.js';
 import { TaskExecutionError, TaskInputValidationError } from './errors.js';
+import type { ICatalog, ModelContent } from '../catalog/i-catalog.js';
 import type {
-  FileContent,
-  IInferenceProvider,
-  IKnowledgeStore,
+  InferenceProvider,
   InferenceOptions,
-  IPsmTemplate,
+  PsmTemplate,
   StepDefinition,
   TaskState,
 } from '@commonkads/engine';
+import type { Task } from './types/task.js';
 
-class FakeKnowledgeStore implements IKnowledgeStore {
-  constructor(
-    private readonly files: Record<string, FileContent> = {},
-    private readonly passages: Record<string, string> = {},
-  ) {}
+class FakeCatalog implements ICatalog {
+  constructor(private readonly models: Record<string, ModelContent> = {}) {}
 
-  async get(ref: string): Promise<FileContent> {
-    const file = this.files[ref];
-    if (!file) throw new Error(`no such fake ref: ${ref}`);
-    return file;
+  async getTask(_id: string): Promise<Task> {
+    throw new Error('getTask not used in engine tests');
   }
 
-  async search(query: string): Promise<FileContent> {
-    return { content: this.passages[query] ?? '', version: '' };
+  async getModel(id: string): Promise<ModelContent> {
+    const m = this.models[id];
+    if (!m) throw new Error(`no such fake model: ${id}`);
+    return m;
   }
 }
 
 /** Two-step PSM: a deterministic "det" step, then a non-deterministic "llm" step. */
-class FakePsm implements IPsmTemplate {
+class FakePsm implements PsmTemplate {
   initializeState(input: unknown): TaskState {
     return { input, completed: [] };
   }
@@ -72,27 +69,24 @@ class FakePsm implements IPsmTemplate {
   }
 }
 
-function buildEngine(infer: IInferenceProvider['infer']) {
-  const store = new FakeKnowledgeStore(
-    {
-      'a.txt': { content: 'A-CONTENT', version: 'va' },
-      'b.txt': { content: 'B-CONTENT', version: 'vb' },
-    },
-    { q1: 'Q1-PASSAGE' },
-  );
-  const inference: IInferenceProvider = { infer };
-  return new RuntimeEngine(store, inference);
+function buildEngine(infer: InferenceProvider['infer']) {
+  const catalog = new FakeCatalog({
+    'a.txt': { content: 'A-CONTENT', version: 'va' },
+    'b.txt': { content: 'B-CONTENT', version: 'vb' },
+  });
+  const inference: InferenceProvider = { infer };
+  return { engine: new RuntimeEngine(inference), catalog };
 }
 
 describe('RuntimeEngine', () => {
   it('runs the deterministic step with knowledge text passed directly, and the LLM step via inference', async () => {
     let capturedPrompt = '';
-    const engine = buildEngine(async (prompt) => {
+    const { engine, catalog } = buildEngine(async (prompt) => {
       capturedPrompt = prompt;
       return JSON.stringify({ ok: true });
     });
 
-    const context = new RuntimeContext();
+    const context = new RuntimeContext({ catalog });
     const result = (await engine.execute(
       { name: 'fake', psm: new FakePsm() },
       { x: 1 },
@@ -100,17 +94,17 @@ describe('RuntimeEngine', () => {
     )) as TaskState;
 
     assert.strictEqual(result.detOutput, 'A-CONTENT');
-    assert.strictEqual(capturedPrompt, 'PROMPT[llm]:B-CONTENT\n\n---\n\nQ1-PASSAGE');
+    assert.strictEqual(capturedPrompt, 'PROMPT[llm]:B-CONTENT');
     assert.deepStrictEqual(result.llmOutput, { ok: true });
     assert.deepStrictEqual(result.completed, ['det', 'llm']);
   });
 
   it('unwraps the explain wrapper and stores the explanation on the context', async () => {
-    const engine = buildEngine(async (_prompt, _options?: InferenceOptions) =>
+    const { engine, catalog } = buildEngine(async (_prompt, _options?: InferenceOptions) =>
       JSON.stringify({ result: { ok: true }, _explanation: 'because reasons' }),
     );
 
-    const context = new RuntimeContext({ explain: true });
+    const context = new RuntimeContext({ explain: true, catalog });
     const result = (await engine.execute(
       { name: 'fake', psm: new FakePsm() },
       {},
@@ -122,8 +116,8 @@ describe('RuntimeEngine', () => {
   });
 
   it('records an audit log entry and a timing entry per step when enabled', async () => {
-    const engine = buildEngine(async () => JSON.stringify({ ok: true }));
-    const context = new RuntimeContext({ enableAuditLog: true, enableTimings: true });
+    const { engine, catalog } = buildEngine(async () => JSON.stringify({ ok: true }));
+    const context = new RuntimeContext({ enableAuditLog: true, enableTimings: true, catalog });
 
     await engine.execute({ name: 'fake', psm: new FakePsm() }, {}, context);
 
@@ -146,8 +140,8 @@ describe('RuntimeEngine', () => {
   });
 
   it('leaves auditLog and timings undefined when not enabled', async () => {
-    const engine = buildEngine(async () => JSON.stringify({ ok: true }));
-    const context = new RuntimeContext();
+    const { engine, catalog } = buildEngine(async () => JSON.stringify({ ok: true }));
+    const context = new RuntimeContext({ catalog });
 
     await engine.execute({ name: 'fake', psm: new FakePsm() }, {}, context);
 
@@ -156,10 +150,10 @@ describe('RuntimeEngine', () => {
   });
 
   it('wraps a thrown inference error in a TaskExecutionError naming the failing step', async () => {
-    const engine = buildEngine(async () => {
+    const { engine, catalog } = buildEngine(async () => {
       throw new Error('boom');
     });
-    const context = new RuntimeContext();
+    const context = new RuntimeContext({ catalog });
 
     let caught: unknown;
     try {
@@ -177,9 +171,7 @@ describe('RuntimeEngine', () => {
     let defaultCalled = false;
     let namedCalled = false;
 
-    const store = new FakeKnowledgeStore({ 'a.txt': { content: 'A', version: 'v1' } }, {});
-
-    class SingleStepPsm implements IPsmTemplate {
+    class SingleStepPsm implements PsmTemplate {
       initializeState(input: unknown): TaskState {
         return { input, completed: [] };
       }
@@ -199,7 +191,7 @@ describe('RuntimeEngine', () => {
       }
     }
 
-    const engine = new RuntimeEngine(store, {
+    const engine = new RuntimeEngine({
       default: {
         infer: async () => {
           defaultCalled = true;
@@ -221,9 +213,7 @@ describe('RuntimeEngine', () => {
   });
 
   it('throws TaskExecutionError when step inferenceId is not registered', async () => {
-    const store = new FakeKnowledgeStore({ 'a.txt': { content: 'A', version: 'v1' } }, {});
-
-    class MissingIdPsm implements IPsmTemplate {
+    class MissingIdPsm implements PsmTemplate {
       initializeState(input: unknown): TaskState {
         return { input, completed: [] };
       }
@@ -243,7 +233,7 @@ describe('RuntimeEngine', () => {
       }
     }
 
-    const engine = new RuntimeEngine(store, { infer: async () => JSON.stringify({}) });
+    const engine = new RuntimeEngine({ infer: async () => JSON.stringify({}) });
 
     let caught: unknown;
     try {
@@ -256,20 +246,35 @@ describe('RuntimeEngine', () => {
     assert.ok((caught as TaskExecutionError).cause instanceof Error);
     assert.ok(((caught as TaskExecutionError).cause as Error).message.includes('missing'));
   });
+  it('throws at step execution when knowledgeRefs present but no catalog on context', async () => {
+    const { engine } = buildEngine(async () => JSON.stringify({ ok: true }));
+    const context = new RuntimeContext();
+
+    let caught: unknown;
+    try {
+      await engine.execute({ name: 'fake', psm: new FakePsm() }, {}, context);
+    } catch (err) {
+      caught = err;
+    }
+
+    assert.ok(caught instanceof TaskExecutionError);
+    assert.strictEqual((caught as TaskExecutionError).step, 'det');
+    assert.ok(((caught as TaskExecutionError).cause as Error).message.includes('catalog'));
+  });
 });
 
 describe('RuntimeEngine — schema validation', () => {
   it('skips validation and runs normally when task has no inputSchema', async () => {
-    const engine = buildEngine(async () => JSON.stringify({ ok: true }));
-    const context = new RuntimeContext();
+    const { engine, catalog } = buildEngine(async () => JSON.stringify({ ok: true }));
+    const context = new RuntimeContext({ catalog });
     // No inputSchema on task — should not throw
     const result = await engine.execute({ name: 'fake', psm: new FakePsm() }, { x: 1 }, context);
     assert.ok(result !== undefined);
   });
 
   it('runs normally when input satisfies the inputSchema', async () => {
-    const engine = buildEngine(async () => JSON.stringify({ ok: true }));
-    const context = new RuntimeContext();
+    const { engine, catalog } = buildEngine(async () => JSON.stringify({ ok: true }));
+    const context = new RuntimeContext({ catalog });
     const task = {
       name: 'fake',
       psm: new FakePsm(),
@@ -280,8 +285,8 @@ describe('RuntimeEngine — schema validation', () => {
   });
 
   it('throws TaskInputValidationError when input violates the inputSchema', async () => {
-    const engine = buildEngine(async () => JSON.stringify({ ok: true }));
-    const context = new RuntimeContext();
+    const { engine, catalog } = buildEngine(async () => JSON.stringify({ ok: true }));
+    const context = new RuntimeContext({ catalog });
     const task = {
       name: 'fake',
       psm: new FakePsm(),
@@ -301,10 +306,10 @@ describe('RuntimeEngine — schema validation', () => {
   });
 
   it('does not throw TaskExecutionError for a schema failure (schema is validated before the loop)', async () => {
-    const engine = buildEngine(async () => {
+    const { engine, catalog } = buildEngine(async () => {
       throw new Error('should not reach inference');
     });
-    const context = new RuntimeContext();
+    const context = new RuntimeContext({ catalog });
     const task = {
       name: 'fake',
       psm: new FakePsm(),

@@ -1,11 +1,15 @@
 import Ajv from 'ajv';
 
+import type { ModelContent } from '../catalog/i-catalog.js';
 import { parseJsonValue, unwrapExplanation } from '../utils/index.js';
 import type { RuntimeContext } from './context.js';
 import { TaskExecutionError, TaskInputValidationError } from './errors.js';
-import type { IInferenceProvider, IKnowledgeStore, IPsmTemplate } from './interfaces/index.js';
-import type { KnowledgeRef, StepDefinition, TaskState } from './types/index.js';
-import type { Task } from './types/task.js';
+import type { InferenceProvider } from './inference-provider.js';
+import type { PsmTemplate } from './psm-template.js';
+import type { KnowledgeRef } from './knowledge-ref.js';
+import type { StepDefinition } from './step-definition.js';
+import type { TaskState } from './task-state.js';
+import type { Task } from './task.js';
 
 interface FetchedKnowledge {
   knowledgeText: string;
@@ -14,15 +18,10 @@ interface FetchedKnowledge {
 
 /** Runs the Task Execution Loop described in REQ-2. */
 export class RuntimeEngine {
-  private readonly store: IKnowledgeStore;
-  private readonly inferences: Record<string, IInferenceProvider>;
+  private readonly inferences: Record<string, InferenceProvider>;
 
-  constructor(
-    store: IKnowledgeStore,
-    inference: IInferenceProvider | Record<string, IInferenceProvider>,
-  ) {
-    this.store = store;
-    this.inferences = isIInferenceProvider(inference) ? { default: inference } : inference;
+  constructor(inference: InferenceProvider | Record<string, InferenceProvider>) {
+    this.inferences = isInferenceProvider(inference) ? { default: inference } : inference;
   }
 
   async execute<TInput = unknown, TOutput = unknown>(
@@ -49,7 +48,7 @@ export class RuntimeEngine {
   }
 
   private async executeStep(
-    psm: IPsmTemplate,
+    psm: PsmTemplate,
     state: TaskState,
     step: StepDefinition,
     context: RuntimeContext,
@@ -58,7 +57,7 @@ export class RuntimeEngine {
     context.logger?.info(`Executing step: ${step.name}`);
 
     try {
-      const { knowledgeText, knowledgeRefs } = await this.fetchKnowledge(step);
+      const { knowledgeText, knowledgeRefs } = await this.fetchKnowledge(step, context);
 
       const output = step.deterministic
         ? knowledgeText
@@ -73,14 +72,26 @@ export class RuntimeEngine {
     }
   }
 
-  private async fetchKnowledge(step: StepDefinition): Promise<FetchedKnowledge> {
+  private async fetchKnowledge(
+    step: StepDefinition,
+    context: RuntimeContext,
+  ): Promise<FetchedKnowledge> {
     const refs = step.knowledgeRefs ?? [];
     const queries = step.knowledgeSearches ?? [];
+    const catalog = context.catalog;
 
-    const [refResults, searchResults] = await Promise.all([
-      Promise.all(refs.map((ref) => this.store.get(ref))),
-      Promise.all(queries.map((query) => this.store.search(query))),
-    ]);
+    let refResults: ModelContent[] = [];
+    if (refs.length > 0) {
+      if (!catalog) {
+        throw new Error(
+          `Step '${step.name}' requires knowledge refs but no catalog is configured in RuntimeContext`,
+        );
+      }
+      refResults = await Promise.all(refs.map((ref) => catalog.getModel(ref)));
+    }
+
+    // Semantic search deferred to #18 — return empty stubs matching prior behavior.
+    const searchResults = queries.map(() => ({ content: '', version: '' }));
 
     const knowledgeRefs: KnowledgeRef[] = [
       ...refs.map((ref, i) => ({ id: ref, version: refResults[i].version })),
@@ -96,7 +107,7 @@ export class RuntimeEngine {
   }
 
   private async infer(
-    psm: IPsmTemplate,
+    psm: PsmTemplate,
     state: TaskState,
     step: StepDefinition,
     knowledgeText: string,
@@ -124,8 +135,8 @@ export class RuntimeEngine {
   }
 }
 
-function isIInferenceProvider(
-  v: IInferenceProvider | Record<string, IInferenceProvider>,
-): v is IInferenceProvider {
-  return typeof (v as IInferenceProvider).infer === 'function';
+function isInferenceProvider(
+  v: InferenceProvider | Record<string, InferenceProvider>,
+): v is InferenceProvider {
+  return typeof (v as InferenceProvider).infer === 'function';
 }

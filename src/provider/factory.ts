@@ -1,9 +1,9 @@
-import type { IInferenceProvider } from '../core/interfaces/i-inference-provider.js';
+import type { InferenceProvider } from '../core/inference-provider.js';
 
 /** An open-ended config shape passed to registered provider builders. */
 export type ProviderConfig = { type: string } & Record<string, unknown>;
 
-type ProviderBuilder = (options: ProviderConfig) => IInferenceProvider;
+type ProviderBuilder = (options: ProviderConfig) => InferenceProvider;
 
 const registry = new Map<string, ProviderBuilder>();
 
@@ -22,14 +22,14 @@ export function registerProvider(type: string, builder: ProviderBuilder): void {
 }
 
 /**
- * Constructs an `IInferenceProvider` from a config object. Dispatches to the
+ * Constructs an `InferenceProvider` from a config object. Dispatches to the
  * matching registered builder; throws if the type is unregistered.
  *
  * Pass any object with a `type` string — the specific provider option types
  * exported by `@robproper/strata-aws`, `@robproper/strata-anthropic`, and
  * `@robproper/strata-google` are all accepted at the call site.
  */
-export function buildInference(options: { type: string }): IInferenceProvider {
+export function buildInference(options: { type: string }): InferenceProvider {
   const builder = registry.get(options.type);
   if (builder) return builder(options as ProviderConfig);
   throw new Error(

@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 
 import { RuntimeContext } from '../../core/context.js';
 import { RuntimeEngine } from '../../core/engine.js';
-import { FileStoreKnowledgeAdapter } from '../../provider/file-store-knowledge-adapter.js';
-import type { FileContent, IFileStore } from '@commonkads/engine';
+import type { FileContent } from '@commonkads/engine';
+import type { ICatalog } from '../../catalog/i-catalog.js';
+import type { IStorageBackend } from '../../catalog/i-storage-backend.js';
 import { DataDrivenMonitoringPsm } from './data-driven-monitoring-psm.js';
 
-class FakeFileStore implements IFileStore {
+class FakeFileStore implements IStorageBackend {
   async read(path: string): Promise<string> {
     return (await this.readWithVersion(path)).content;
   }
@@ -21,10 +22,14 @@ class FakeFileStore implements IFileStore {
   }
 }
 
+const catalog: ICatalog = {
+  getTask: () => Promise.reject(new Error('getTask not used in PSM tests')),
+  getModel: (id) => new FakeFileStore().readWithVersion(id),
+};
+
 function buildEngine(deviations: Array<{ name: string; severity: string; reason: string }>) {
-  const fileStore = new FakeFileStore();
   const inference = { infer: async () => JSON.stringify(deviations) };
-  return new RuntimeEngine(new FileStoreKnowledgeAdapter(fileStore), inference);
+  return new RuntimeEngine(inference);
 }
 
 const paths = {
@@ -43,7 +48,7 @@ describe('DataDrivenMonitoringPsm', () => {
     const result = (await engine.execute(
       { name: 'monitoring', psm: new DataDrivenMonitoringPsm(paths) },
       {},
-      new RuntimeContext(),
+      new RuntimeContext({ catalog }),
     )) as {
       verdict: string;
       deviations: unknown[];
@@ -54,17 +59,16 @@ describe('DataDrivenMonitoringPsm', () => {
   });
 
   it('throws when LLM returns an object instead of an array for the evaluate step', async () => {
-    const fileStore = new FakeFileStore();
     const inference = {
       infer: async () => JSON.stringify({ name: 'Temperature', severity: 'Normal' }),
     };
-    const engine = new RuntimeEngine(new FileStoreKnowledgeAdapter(fileStore), inference);
+    const engine = new RuntimeEngine(inference);
 
     await assert.rejects(
       engine.execute(
         { name: 'monitoring', psm: new DataDrivenMonitoringPsm(paths) },
         {},
-        new RuntimeContext(),
+        new RuntimeContext({ catalog }),
       ),
       /Expected a JSON array/,
     );
@@ -79,7 +83,7 @@ describe('DataDrivenMonitoringPsm', () => {
     const result = (await engine.execute(
       { name: 'monitoring', psm: new DataDrivenMonitoringPsm(paths) },
       {},
-      new RuntimeContext(),
+      new RuntimeContext({ catalog }),
     )) as {
       verdict: string;
     };
@@ -95,7 +99,7 @@ describe('DataDrivenMonitoringPsm', () => {
     const result = (await engine.execute(
       { name: 'monitoring', psm: new DataDrivenMonitoringPsm(paths) },
       {},
-      new RuntimeContext(),
+      new RuntimeContext({ catalog }),
     )) as {
       verdict: string;
     };

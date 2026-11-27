@@ -18,7 +18,7 @@ export class TaskExecutionError extends Error {
   }
 }
 
-/** Thrown by an `IFileStore` when the requested path does not exist. */
+/** Thrown by an `IStorageBackend` when the requested path does not exist. */
 export class FileNotFoundError extends Error {
   constructor(public readonly path: string) {
     super(`File not found: ${path}`);

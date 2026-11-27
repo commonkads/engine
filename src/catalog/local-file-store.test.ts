@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { LocalFileStore } from './local-file-store.js';
-import { FileNotFoundError, InvalidStoreConfigError } from '../../core/errors.js';
+import { FileNotFoundError, InvalidStoreConfigError } from '../core/errors.js';
 
 describe('LocalFileStore', () => {
   let dir: string;

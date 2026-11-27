@@ -4,17 +4,17 @@
 
 | Layer | Component | File |
 |-------|-----------|------|
-| Core interfaces | `IInferenceProvider` | `src/core/interfaces/i-inference-provider.ts` |
-| Core interfaces | `IFileStore` | `src/core/interfaces/i-file-store.ts` |
-| Core interfaces | `IKnowledgeStore` | `src/core/interfaces/i-knowledge-store.ts` |
-| Core interfaces | `IPsmTemplate` | `src/core/interfaces/i-psm-template.ts` |
+| Core types | `InferenceProvider`, `PsmTemplate`, `Task`, `StepDefinition`, `TaskState`, `ModelContent`, etc. | `src/core/*.ts` |
 | Execution | `RuntimeEngine` | `src/core/engine.ts` |
 | Execution | `RuntimeContext` | `src/core/context.ts` |
+| Catalog | `ICatalog`, `IStorageBackend`, `IKnowledgeStore` | `src/catalog/i-*.ts` |
+| Catalog | `LocalCatalog`, `CompositeCatalog` | `src/catalog/local-catalog.ts`, `src/catalog/composite-catalog.ts` |
+| Catalog | `LocalFileStore` | `src/catalog/local-file-store.ts` |
+| Catalog | `FileStoreKnowledgeAdapter` | `src/catalog/file-store-knowledge-adapter.ts` |
+| Catalog | `DomainManifest`, `loadCatalog` | `src/catalog/domain-manifest.ts` |
 | PSM templates | `BasePsm` | `src/knowledge/psm/base-psm.ts` |
-| PSM templates | `AssessmentPsm` | `src/knowledge/psm/assessment-psm.ts` |
-| PSM templates | `DiagnosisPsm` | `src/knowledge/psm/diagnosis-psm.ts` |
-| PSM templates | `MonitoringPsm` | `src/knowledge/psm/monitoring-psm.ts` |
-| Providers (built-in) | `LocalFileStore` | `src/provider/local/` |
+| PSM templates | `AssessmentPsm`, `DiagnosisPsm`, `MonitoringPsm` | `src/knowledge/psm/` |
+| PSM factory | `loadTaskFromManifest` | `src/knowledge/psm-factory.ts` |
 | Registry | `registerProvider`, `buildInference` | `src/provider/factory.ts` |
 | Utilities | `createDiagnosticsLogger` | `src/utils/diagnostics.ts` |
 | Utilities | `StreamLogger`, `LevelFilterLogger` | `src/utils/logger.ts` |
@@ -28,15 +28,15 @@ RuntimeEngine.execute(psm, input, context)
   │
   └─ loop: psm.getNextStep(state) → StepDefinition | null
        │
-       ├─ fetch knowledgeRefs via IFileStore.readWithVersion  ┐ parallel
-       ├─ fetch knowledgeSearches via IKnowledgeStore.search  ┘
+       ├─ fetch knowledgeRefs via context.catalog.getModel(ref)  ┐ parallel
+       ├─ knowledgeSearches → empty stubs (semantic search, #18)  ┘
        │
        ├─ if deterministic
        │    └─ psm.updateState(state, step, knowledgeText)
        │
        └─ if LLM step
             ├─ psm.buildPrompt(step, state, knowledgeText, explain)
-            ├─ IInferenceProvider.infer(prompt, options)
+            ├─ InferenceProvider.infer(prompt, options)
             ├─ unwrapExplanation (if explain active)
             └─ psm.updateState(state, step, result)
   │
@@ -98,3 +98,11 @@ const inference = buildInference({ type: 'claude', model: 'claude-sonnet-5-5', a
 ```
 
 The registry is a `Map<string, ProviderBuilder>`. All entries come from caller code at startup; the engine never hard-codes any provider.
+
+## 6. Catalog Layer
+
+- **`ICatalog` is the engine's single point of contact for knowledge model retrieval.** `RuntimeEngine` calls `context.catalog.getModel(ref)` for each `knowledgeRef`. The engine holds no storage reference. `RuntimeContext.catalog` is optional; a step that declares refs with no catalog wired fails at execution.
+- **`LocalCatalog` reads `catalog.yml` through `IStorageBackend`.** `LocalCatalog.load(backend)` parses the manifest and exposes `taskIds`. `getTask(id)` builds a `Task` from the domain's `domain.yml`. `getModel(id)` treats `id` as a file path in the backend. This is a compatibility shim that stays until the manifest shape changes (#19).
+- **`CompositeCatalog` fans out across child catalogs.** It validates task ID uniqueness at construction, so a collision fails at startup rather than at lookup. Fan-out catches only `CatalogError` and rethrows anything else immediately, so a real I/O or parse failure is not masked as "not found".
+- **`IStorageBackend` replaces `IFileStore`.** The shape is unchanged; the rename reflects that storage is a catalog concern, not a provider concern.
+- **Placement rule.** `src/catalog/` is the home for all storage backend implementations (`LocalFileStore`, future `S3Catalog` and `GCSCatalog`). `src/provider/` is for inference providers only.
